@@ -3,6 +3,7 @@
 from array import array
 from collections import defaultdict
 import logging
+import math
 
 
 try:
@@ -12,7 +13,7 @@ except:
     gimpfu = None
 
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 
 
 try:
@@ -79,11 +80,11 @@ def hsl2rgb(h, s, l):
     return (int(255 * (r + m)), int(255 * (g + m)), int(255 * (b + m)))
 
 
-def collect_colours(pixels, pixel_size):
+def collect_colours(pixels, pixel_size, theshold):
     """Collect colours from an array.
 
-    Count their frequency by hue and saturation (ignoring lightness
-    and alpha).
+    Count their frequency by hue and saturation, ignoring lightness
+    and alpha, and return (hue, saturation) tuples above the threshold.
     """
 
     colourmap = defaultdict(int)
@@ -93,7 +94,24 @@ def collect_colours(pixels, pixel_size):
         colourmap[(h, s)] += 1
 
     logging.debug(colourmap)
-    return colourmap
+    colours = [hs for hs, count in colourmap.items() if count >= theshold]
+    logging.debug(colours)
+    return colours
+
+
+def colourwheel_position(h, s, size):
+    """Calculates the (x, y)-coordinates of the hue h and saturation s in
+    a colour wheel of sizel ``size``.
+    """
+
+    h = math.radians(h)
+    x = s * math.sin(h) * size/200 + size/2
+    y = s * math.cos(h) * size/200 + size/2
+
+    x = min(size - 1, int(x))
+    y = min(size - 1, int(y))
+
+    return x, y
 
 
 def get_pixel_array(image):
@@ -113,18 +131,34 @@ def get_pixel_array(image):
     return pixels, pixel_size
 
 
-def prepare_output_image():
+def prepare_output_image(size):
     """Create new image with white background and a black circle for
     the colour wheel."""
-    loggin.info('Preparing output image')
-    img = gimpfu.gimp.Image(200, 200, gimpfu.RGB)
+
+    logging.info('Preparing output image')
+    img = gimpfu.gimp.Image(size, size, gimpfu.RGB)
     layer = gimpfu.gimp.Layer(
-        img, 'Background', 200, 200, gimpfu.RGB_IMAGE, 100, gimpfu.NORMAL_MODE)
-    gimpfu.gimp.set_background((0, 0, 0))
-    gimpfu.gimp.set_foreground((255, 255, 255))
+        img, 'Background', size, size, gimpfu.RGB_IMAGE, 100,
+        gimpfu.NORMAL_MODE)
+    gimpfu.gimp.set_foreground((0, 0, 0))
+    gimpfu.gimp.set_background((255, 255, 255))
     layer.fill(gimpfu.BACKGROUND_FILL)
     img.add_layer(layer, 1)
+    gimpfu.pdb.gimp_ellipse_select(
+        img, 0, 0, size, size, 2, True, False, False)
+    gimpfu.pdb.gimp_edit_fill(layer, gimpfu.FOREGROUND_FILL)
+    gimpfu.pdb.gimp_selection_none(img)
     return img, layer
+
+
+def draw_colourwheel_distribution(img, layer, size, colours):
+    """Draws the colour wheel output."""
+
+    logging.info('Drawing output')
+    for h, s in colours:
+        x, y = colourwheel_position(h, s, size)
+        rgb = hsl2rgb(h, s, 50)
+        gimpfu.pdb.gimp_drawable_set_pixel(layer, x, y, 3, rgb)
 
 
 def python_colourwheel_analysis(image, drawable, threshold=1):
@@ -133,11 +167,14 @@ def python_colourwheel_analysis(image, drawable, threshold=1):
     # collect colour info
     gimpfu.gimp.progress_init('Analyzing colours...')
     pixels, pixel_size = get_pixel_array(image)
-    colourmap = collect_colours(pixels, pixel_size)
+    colours = collect_colours(pixels, pixel_size, threshold)
 
     # write colour info to new image
-    gimpfu.gimp.progress_update(0.5)
-    out_img, out_layer = prepare_output_image()
+    gimpfu.gimp.progress_update(0.33)
+    size = 200
+    out_img, out_layer = prepare_output_image(size)
+    gimpfu.gimp.progress_update(0.66)
+    draw_colourwheel_distribution(out_img, out_layer, size, colours)
 
     # display results
     gimpfu.gimp.progress_update(1)
@@ -148,11 +185,11 @@ def python_colourwheel_analysis(image, drawable, threshold=1):
 if gimpfu:
     gimpfu.register(
         'python_fu_colourwheel_analysis',
-        'Display colours used in the image on a colour wheel',
-        'Display colours used in the image on a colour wheel',
+        'Display colour distribution on a colour wheel.',
+        'Display colour distribution on a colour wheel.',
         'Rebecca Breu',
-        'Rebecca Breu',
-        '2016',
+        '2016 Rebecca Breu, GPLv3',
+        '10 March 2016',
         '<Image>/Colors/Info/Colour Wheel Analysis...',
 
     'RGB*',

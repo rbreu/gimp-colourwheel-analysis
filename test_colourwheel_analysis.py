@@ -1,5 +1,10 @@
 import pytest
-from colourwheel_analysis import rgb2hsl, hsl2rgb, collect_colours
+from colourwheel_analysis import (
+    collect_colours,
+    colourwheel_position,
+    hsl2rgb,
+    rgb2hsl,
+)
 
 
 rgb_hsl_testdata = [
@@ -39,7 +44,7 @@ def test_collect_colours_rgb():
               255, 255, 255,
               255, 255, 255,
               0, 0, 255]
-    assert collect_colours(pixels, 3) == {(0, 0): 3, (240, 100): 1}
+    assert collect_colours(pixels, 3, 1) == [(0, 0), (240, 100)]
 
 
 def test_collect_colours_rgba():
@@ -47,4 +52,26 @@ def test_collect_colours_rgba():
               255, 255, 255, 255,
               255, 255, 255, 255,
               0, 0, 255, 255]
-    assert collect_colours(pixels, 4) == {(0, 0): 3, (240, 100): 1}
+    assert collect_colours(pixels, 4, 1) == [(0, 0), (240, 100)]
+
+
+def test_collect_coulours_threshold():
+    pixels = [255, 255, 255,
+              255, 255, 255,
+              255, 255, 255,
+              0, 0, 255]
+    assert collect_colours(pixels, 3, 2) == [(0, 0)]
+
+
+@pytest.mark.parametrize("hs,pos", [
+    [(0, 0), (100, 100)],
+    [(0, 100), (100, 200)],
+    [(0, 50), (100, 150)],
+    [(90, 100), (200, 100)],
+    [(180, 100), (100, 0)],
+    [(270, 100), (0, 100)],
+])
+def test_colourwheel_position(hs, pos):
+    result = colourwheel_position(*hs, size=200)
+    assert abs(result[0] - pos[0]) <= epsilon
+    assert abs(result[1] - pos[1]) <= epsilon
