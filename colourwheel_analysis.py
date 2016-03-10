@@ -108,10 +108,7 @@ def colourwheel_position(h, s, size):
     x = s * math.sin(h) * size/200 + size/2
     y = s * math.cos(h) * size/200 + size/2
 
-    x = min(size - 1, int(x))
-    y = min(size - 1, int(y))
-
-    return x, y
+    return int(x), int(y)
 
 
 def get_pixel_array(image):
@@ -151,6 +148,19 @@ def prepare_output_image(size):
     return img, layer
 
 
+def draw_pixel(layer, x, y, rgb):
+    """Draw pixel to layer.
+
+    Ensure that x, y are within range; cap if necassary.
+    """
+
+    x = min(x, layer.width - 1)
+    x = max(x, 0)
+    y = min(y, layer.width - 1)
+    y = max(y, 0)
+    gimpfu.pdb.gimp_drawable_set_pixel(layer, x, y, 3, rgb)
+
+
 def draw_colourwheel_distribution(img, layer, size, colours, draw_as):
     """Draws the colour wheel output."""
 
@@ -159,17 +169,13 @@ def draw_colourwheel_distribution(img, layer, size, colours, draw_as):
         x, y = colourwheel_position(h, s, size)
         rgb = hsl2rgb(h, s, 50)
 
-        gimpfu.pdb.gimp_drawable_set_pixel(layer, x, y, 3, rgb)
+        draw_pixel(layer, x, y, rgb)
 
         if draw_as == 'cross':
-            gimpfu.pdb.gimp_drawable_set_pixel(
-                layer, max(0, x - 1), y, 3, rgb)
-            gimpfu.pdb.gimp_drawable_set_pixel(
-                layer, min(size - 1, x + 1), y, 3, rgb)
-            gimpfu.pdb.gimp_drawable_set_pixel(
-                layer, x, max(0, y - 1), 3, rgb)
-            gimpfu.pdb.gimp_drawable_set_pixel(
-                layer, x, min(size - 1, y + 1), 3, rgb)
+            draw_pixel(layer, x - 1, y, rgb)
+            draw_pixel(layer, x + 1, y, rgb)
+            draw_pixel(layer, x, y - 1, rgb)
+            draw_pixel(layer, x, y + 1, rgb)
 
 
 def python_colourwheel_analysis(image, drawable, threshold=1, draw_as='cross'):
