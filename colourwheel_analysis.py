@@ -13,7 +13,7 @@ except:
     gimpfu = None
 
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.WARN)
 
 
 try:
@@ -151,17 +151,28 @@ def prepare_output_image(size):
     return img, layer
 
 
-def draw_colourwheel_distribution(img, layer, size, colours):
+def draw_colourwheel_distribution(img, layer, size, colours, draw_as):
     """Draws the colour wheel output."""
 
     logging.info('Drawing output')
     for h, s in colours:
         x, y = colourwheel_position(h, s, size)
         rgb = hsl2rgb(h, s, 50)
+
         gimpfu.pdb.gimp_drawable_set_pixel(layer, x, y, 3, rgb)
 
+        if draw_as == 'cross':
+            gimpfu.pdb.gimp_drawable_set_pixel(
+                layer, max(0, x - 1), y, 3, rgb)
+            gimpfu.pdb.gimp_drawable_set_pixel(
+                layer, min(size - 1, x + 1), y, 3, rgb)
+            gimpfu.pdb.gimp_drawable_set_pixel(
+                layer, x, max(0, y - 1), 3, rgb)
+            gimpfu.pdb.gimp_drawable_set_pixel(
+                layer, x, min(size - 1, y + 1), 3, rgb)
 
-def python_colourwheel_analysis(image, drawable, threshold=1):
+
+def python_colourwheel_analysis(image, drawable, threshold=1, draw_as='cross'):
     """The plugin's main function."""
 
     # collect colour info
@@ -174,7 +185,7 @@ def python_colourwheel_analysis(image, drawable, threshold=1):
     size = 200
     out_img, out_layer = prepare_output_image(size)
     gimpfu.gimp.progress_update(0.66)
-    draw_colourwheel_distribution(out_img, out_layer, size, colours)
+    draw_colourwheel_distribution(out_img, out_layer, size, colours, draw_as)
 
     # display results
     gimpfu.gimp.progress_update(1)
@@ -196,7 +207,13 @@ if gimpfu:
         [
             (gimpfu.PF_INT,
              'threshold',
-             'Min. number of occurences per colour', 1),
+             'Min. number of occurences per colour',
+             1),
+            (gimpfu.PF_RADIO,
+             'draw_as',
+             'Draw colours as',
+             'cross',
+             (('Single pixels', 'pixel'), ('Crosses', 'cross'))),
         ],
         [],
         python_colourwheel_analysis,
