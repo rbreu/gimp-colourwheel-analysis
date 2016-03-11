@@ -172,14 +172,19 @@ def draw_colourwheel_distribution(img, layer, size, colours, draw_as):
         x, y = colourwheel_position(h, s, size)
         rgb = hsl2rgb(h, s, 50)
 
-        #draw_pixel(layer, x, y, rgb)
         draw_pixel_to_array(pixels, size, x, y, rgb)
 
-        if draw_as == 'cross':
+        if draw_as in ('cross', 'square'):
             draw_pixel_to_array(pixels, size, x - 1, y, rgb)
             draw_pixel_to_array(pixels, size, x + 1, y, rgb)
             draw_pixel_to_array(pixels, size, x, y - 1, rgb)
             draw_pixel_to_array(pixels, size, x, y + 1, rgb)
+
+        if draw_as == 'square':
+            draw_pixel_to_array(pixels, size, x - 1, y - 1, rgb)
+            draw_pixel_to_array(pixels, size, x - 1, y + 1, rgb)
+            draw_pixel_to_array(pixels, size, x + 1, y - 1, rgb)
+            draw_pixel_to_array(pixels, size, x + 1, y + 1, rgb)
 
     region[:size, :size] = pixels.tostring()
 
@@ -225,7 +230,10 @@ if gimpfu:
              'draw_as',
              'Draw colours as',
              'cross',
-             (('Single pixels', 'pixel'), ('Crosses', 'cross'))),
+             (('Single pixels', 'pixel'),
+              ('Crosses', 'cross'),
+              ('Squares', 'square')),
+             )
         ],
         [],
         python_colourwheel_analysis,
