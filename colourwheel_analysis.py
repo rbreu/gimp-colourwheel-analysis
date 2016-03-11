@@ -111,7 +111,7 @@ def colourwheel_position(h, s, size):
     return int(x), int(y)
 
 
-def get_pixel_array(image):
+def get_pixel_array(image, dirty):
     """Returns the image's pixels as Python array.
 
     Working on the array is a lot faster than accessing individual
@@ -119,13 +119,13 @@ def get_pixel_array(image):
     """
 
     layer = image.active_layer
-    logging.info('Collecting colour info on layer "%s"' % layer.name)
-    region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, dirty=False)
+    logging.info('Reading layer "%s"' % layer.name)
+    region = layer.get_pixel_rgn(0, 0, layer.width, layer.height, dirty)
     pixels = array("B", region[0:layer.width, 0:layer.height])
     pixel_size = len(layer.get_pixel(0, 0))
     logging.debug('Number of pixels: %s', len(pixels))
     logging.debug('Pixel size: %s', pixel_size)
-    return pixels, pixel_size
+    return pixels, pixel_size, region
 
 
 def prepare_output_image(size):
@@ -148,34 +148,40 @@ def prepare_output_image(size):
     return img, layer
 
 
-def draw_pixel(layer, x, y, rgb):
-    """Draw pixel to layer.
+def draw_pixel_to_array(array_, size, x, y, rgb):
+    """Draw pixel to Python array.
 
     Ensure that x, y are within range; cap if necassary.
     """
 
-    x = min(x, layer.width - 1)
-    x = max(x, 0)
-    y = min(y, layer.width - 1)
-    y = max(y, 0)
-    gimpfu.pdb.gimp_drawable_set_pixel(layer, x, y, 3, rgb)
+    x = max(min(x, size - 1), 0)
+    y = max(min(y, size - 1), 0)
+    pos = (size * y + x) * 3
+    array_[pos] = rgb[0]
+    array_[pos + 1] = rgb[1]
+    array_[pos + 2] = rgb[2]
 
 
 def draw_colourwheel_distribution(img, layer, size, colours, draw_as):
     """Draws the colour wheel output."""
 
     logging.info('Drawing output')
+    pixels, pixel_sizel, region = get_pixel_array(img, dirty=True)
+    size = img.active_layer.width
     for h, s in colours:
         x, y = colourwheel_position(h, s, size)
         rgb = hsl2rgb(h, s, 50)
 
-        draw_pixel(layer, x, y, rgb)
+        #draw_pixel(layer, x, y, rgb)
+        draw_pixel_to_array(pixels, size, x, y, rgb)
 
         if draw_as == 'cross':
-            draw_pixel(layer, x - 1, y, rgb)
-            draw_pixel(layer, x + 1, y, rgb)
-            draw_pixel(layer, x, y - 1, rgb)
-            draw_pixel(layer, x, y + 1, rgb)
+            draw_pixel_to_array(pixels, size, x - 1, y, rgb)
+            draw_pixel_to_array(pixels, size, x + 1, y, rgb)
+            draw_pixel_to_array(pixels, size, x, y - 1, rgb)
+            draw_pixel_to_array(pixels, size, x, y + 1, rgb)
+
+    region[:size, :size] = pixels.tostring()
 
 
 def python_colourwheel_analysis(image, drawable, threshold=1, draw_as='cross'):
@@ -183,7 +189,7 @@ def python_colourwheel_analysis(image, drawable, threshold=1, draw_as='cross'):
 
     # collect colour info
     gimpfu.gimp.progress_init('Analyzing colours...')
-    pixels, pixel_size = get_pixel_array(image)
+    pixels, pixel_size, region = get_pixel_array(image, dirty=False)
     colours = collect_colours(pixels, pixel_size, threshold)
 
     # write colour info to new image

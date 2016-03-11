@@ -2,6 +2,7 @@ import pytest
 from colourwheel_analysis import (
     collect_colours,
     colourwheel_position,
+    draw_pixel_to_array,
     hsl2rgb,
     rgb2hsl,
 )
@@ -75,3 +76,21 @@ def test_colourwheel_position(hs, pos):
     result = colourwheel_position(*hs, size=200)
     assert abs(result[0] - pos[0]) <= epsilon
     assert abs(result[1] - pos[1]) <= epsilon
+
+
+def test_draw_pixel_to_array():
+    a = [0] * 3 * 4 * 4
+    draw_pixel_to_array(a, 4, 1, 2, (1, 2, 3))
+    assert a == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+
+def test_draw_pixel_to_array_cutoff():
+    a = [0] * 3 * 4 * 4
+    draw_pixel_to_array(a, 4, 1, 4, (1, 2, 3))
+    assert a == [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 0]
