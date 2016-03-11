@@ -137,6 +137,8 @@ def prepare_output_image(size):
     layer = gimpfu.gimp.Layer(
         img, 'Background', size, size, gimpfu.RGB_IMAGE, 100,
         gimpfu.NORMAL_MODE)
+    old_fg = gimpfu.gimp.get_foreground()
+    old_bg = gimpfu.gimp.get_background()
     gimpfu.gimp.set_foreground((0, 0, 0))
     gimpfu.gimp.set_background((255, 255, 255))
     layer.fill(gimpfu.BACKGROUND_FILL)
@@ -145,6 +147,8 @@ def prepare_output_image(size):
         img, 0, 0, size, size, 2, True, False, False)
     gimpfu.pdb.gimp_edit_fill(layer, gimpfu.FOREGROUND_FILL)
     gimpfu.pdb.gimp_selection_none(img)
+    gimpfu.gimp.set_foreground(old_fg)
+    gimpfu.gimp.set_background(old_bg)
     return img, layer
 
 
