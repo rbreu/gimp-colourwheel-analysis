@@ -5,6 +5,27 @@ was inpspired by
 [James Gurney's thoughts](http://gurneyjourney.blogspot.de/2011/09/part-1-gamut-masking-method.html) on limited palettes and gamut masking.
 
 
+## Installation
+
+Download [colourwheel_analysis.py](https://raw.githubusercontent.com/rbreu/gimp-colourwheel-analysis/master/colourwheel_analysis.py)
+and save it in your plug-ins folder.
+
+On Linux (depending on distro):  `~/.gimp-2.8/plug-ins/`
+
+On Mac: `$HOME/Library/Application Support/Gimp/2.8/plug-ins/`
+
+On Windows: Find your GIMP installation folder (commonly in `Program
+Files`), then `lib\gimp\2.8\plug-ins\`
+
+On Linux and Mac, make sure to give the file executable rights:
+
+```
+$ chmod +x /path/to/colourwheel_analysis.py
+```
+
+Then **restart GIMP**.
+
+
 ## Examples and Usage
 
 Note that only hue and saturation are taken into account; differences
@@ -24,20 +45,9 @@ Output as squares:
 ![Example: display as squares](images/example1.png "Example: display as squares")
 
 
-## Installation
-
-Download [colourwheel_analysis.py](https://raw.githubusercontent.com/rbreu/gimp-colourwheel-analysis/master/colourwheel_analysis.py)
-and save it in your plug-ins folder, e.g. `~/.gimp-2.8/plug-ins/`. Then restart GIMP.
-
-On Linux and Mac, make sure to give the file executable rights:
-
-```
-$ chmod 755 ~/.gimp-2.8/plug-ins/colourwheel_analysis.py
-```
-
 ## For Developers
 
-The plugin is written in Python. There are unit tests that cover the GIMP-independent calculations. To run them, you need to install pytest, then place both `colourwheel_analysis.py` and `test_colourwheel_analysis.py` in the same folder, preferrably not in your plug-ins folder. Run the tests with:
+The plugin is written in Python. There are unit tests that cover the GIMP-independent calculations. To run them, you need to install pytest, then place both `colourwheel_analysis.py` and `test_colourwheel_analysis.py` in the same folder, preferrably not in your plug-ins folder. Run the tests in that folder with:
 
 ```
 $ py.test
