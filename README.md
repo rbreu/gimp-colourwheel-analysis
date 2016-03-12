@@ -23,7 +23,7 @@ On Linux and Mac, make sure to give the file executable rights:
 $ chmod +x /path/to/colourwheel_analysis.py
 ```
 
-Then **restart GIMP**.
+**Then restart GIMP**. You will find the plugin under *"Color -> Info -> Colour Wheel Analysis..."*.
 
 
 ## Examples and Usage
